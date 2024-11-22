@@ -84,11 +84,14 @@ body {
     transition: .4s ease-in-out;
     background-color: #252525;
     color: white;
+    text-decoration: none;
   }
   
   .button1:hover {
     background-color: black;
     color: white;
+    text-decoration: none;
+    background-color: brown;
   }
   
   .button2 {
@@ -101,11 +104,13 @@ body {
     transition: .4s ease-in-out;
     background-color: #252525;
     color: white;
+    text-decoration: none;
   }
   
   .button2:hover {
-    background-color: black;
+    background-color: lightblue;
     color: white;
+    text-decoration: none;
   }
   
   .button3 {
