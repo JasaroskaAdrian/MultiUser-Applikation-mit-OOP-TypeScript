@@ -1,15 +1,23 @@
-import { Request, Response, Express } from 'express'
+import { Request, Response, Express } from 'express';
+import { resolve } from 'path';
 
 export class API {
   // Properties
-  app: Express
+  app: Express;
+
   // Constructor
   constructor(app: Express) {
-    this.app = app
-    this.app.get('/hello', this.sayHello)
+    this.app = app;
+    this.app.get('/login', this.serveLogin.bind(this)); // Binded this so i can ensure that its the correct context
   }
+
   // Methods
-  private sayHello(req: Request, res: Response) {
-    res.send('Hello There!')
+  private serveLogin(req: Request, res: Response) {
+    const filePath = resolve('client', 'login.html');
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        res.status(500).send('Error serving the login.html file.');
+      }
+    });
   }
 }
