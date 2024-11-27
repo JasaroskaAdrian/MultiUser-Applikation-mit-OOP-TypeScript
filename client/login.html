@@ -6,7 +6,7 @@
     <title>Login</title>
     <script src="client.js"></script>
     <link rel="stylesheet" href="/auth.css"/>
-    <link rel="icon" type="image/png" href="./assets/images/twitter.svg"/>
+    <link rel="icon" type="image/png" href="./assets/images/cat.jpg"/>
 
   </head>
   <body>
@@ -31,6 +31,7 @@
           placeholder="Username"
           class="input-field"
           type="text"
+          id="Username"
         />
       </div>
       <div class="field">
@@ -46,10 +47,10 @@
             d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"
           ></path>
         </svg>
-        <input placeholder="Password" class="input-field" type="password" />
+        <input placeholder="Password" class="input-field" type="password" id="password"/>
       </div>
       <div class="btn">
-        <a class="button1" href="/">
+        <a class="button1"  id="login" href="/" >
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Login&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         </a>
         <a class="button2" href="/register">
@@ -57,7 +58,8 @@
         </a>
         </button>
       </div>
-      <p class="userFeedback"></p>
+      <p id="userFeedback"></p>
     </form>
+    <script src="scripts/login.js"></script>
   </body>
 </html>

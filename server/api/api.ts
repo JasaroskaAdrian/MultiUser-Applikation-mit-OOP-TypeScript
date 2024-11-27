@@ -1,15 +1,17 @@
 import { Request, Response, Express } from 'express'
-
+import * as jwt from 'jsonwebtoken'
 export class API {
   // Properties
   app: Express
+  jwtSecret: string
   // Constructor
-  constructor(app: Express) {
+  constructor(app: Express, jwtSecret: string) {
     this.app = app
-    this.app.get('/hello', this.sayHello)
+    this.jwtSecret = jwtSecret
+    this.app.post('/api/login', this.login.bind(this))
   }
   // Methods
-  private sayHello(req: Request, res: Response) {
+  private login(req: Request, res: Response) {
     res.send('Hello There!')
   }
 }

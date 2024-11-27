@@ -6,13 +6,83 @@
     <title>Register</title>
     <script src="client.js"></script>
     <link rel="stylesheet" href="/auth.css" />
-    <link rel="icon" type="image/png" href="./assets/images/twitter.svg"/>
-
+    <link rel="icon" type="image/png" href="./assets/images/cat.jpg"/>
   </head>
   <body>
     <!--https://uiverse.io/Praashoo7/brave-moose-56-->
     <form class="form">
       <p id="heading">Register</p>
+
+      <!-- First Name Field -->
+      <div class="field">
+        <svg
+          class="input-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"
+          ></path>
+        </svg>
+        <input
+          autocomplete="off"
+          placeholder="First Name"
+          class="input-field"
+          type="text"
+          required
+        />
+      </div>
+
+      <!-- Last Name Field -->
+      <div class="field">
+        <svg
+          class="input-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"
+          ></path>
+        </svg>
+        <input
+          autocomplete="off"
+          placeholder="Last Name"
+          class="input-field"
+          type="text"
+          required
+        />
+      </div>
+
+      <!-- Email Field -->
+      <div class="field">
+        <svg
+          class="input-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zM1 5v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1z"
+          ></path>
+        </svg>
+        <input
+          autocomplete="off"
+          placeholder="Email"
+          class="input-field"
+          type="email"
+          required
+        />
+      </div>
+
+      <!-- Username Field -->
       <div class="field">
         <svg
           class="input-icon"
@@ -31,8 +101,11 @@
           placeholder="Username"
           class="input-field"
           type="text"
+          required
         />
       </div>
+
+      <!-- Password Field -->
       <div class="field">
         <svg
           class="input-icon"
@@ -46,14 +119,44 @@
             d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"
           ></path>
         </svg>
-        <input placeholder="Password" class="input-field" type="password" />
+        <input
+          placeholder="Password"
+          class="input-field"
+          type="password"
+          required
+        />
       </div>
+
+      <!-- Confirm Password Field -->
+      <div class="field">
+        <svg
+          class="input-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"
+          ></path>
+        </svg>
+        <input
+          placeholder="Confirm Password"
+          class="input-field"
+          type="password"
+          required
+        />
+      </div>
+
+      <!-- Submit Button -->
       <div class="btn">
         <a class="button1" href="/login">
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Login&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         </a>
-        <button class="button2">Create Account</button>
+        <button type="submit" class="button2">Create Account</button>
       </div>
+
       <p class="userFeedback"></p>
     </form>
   </body>

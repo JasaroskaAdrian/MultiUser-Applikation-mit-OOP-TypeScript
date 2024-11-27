@@ -1,10 +1,8 @@
-import express, { Express, Request, Response } from 'express';
-import { API } from './api';
-import http from 'http';
-import { resolve, dirname } from 'path';
-import { Database } from './database';
-import dotenv from 'dotenv';
-dotenv.config();
+import express, { Express, Request, Response, NextFunction } from "express";
+import { API } from "./api";
+import http from "http";
+import { resolve, dirname, join } from "path";
+import { Database } from "./database";
 
 class Backend {
   // Properties
@@ -12,6 +10,7 @@ class Backend {
   private _api: API;
   private _database: Database;
   private _env: string;
+  private _jwtSecret: string;
 
   // Getters
   public get app(): Express {
@@ -29,48 +28,65 @@ class Backend {
   // Constructor
   constructor() {
     this._app = express();
+    this._env = process.env.NODE_ENV || "development";
+    this._jwtSecret = process.env.JWT_SECRET || "default_secret"; // Example secret
     this._database = new Database();
-    this._api = new API(this._app);
-    this._env = process.env.NODE_ENV || 'development';
+    this._api = new API(this._app, this._jwtSecret); // Pass the secret to API
 
+    this.setupMiddleware();
     this.setupStaticFiles();
-    this.mainPageRoute();
-    this.loginRoute();
-    this.registerRoute();
-
+    this.setupRoutes();
     this.startServer();
   }
 
   // Methods
-  private setupStaticFiles(): void {
-    this._app.use(express.static('client'));
+  private setupMiddleware(): void {
+    // Middleware for parsing JSON and handling errors
+    this._app.use(express.json());
+    this._app.use(this.globalErrorHandler);
   }
 
-  private mainPageRoute(): void {
-    this._app.get('/', (req: Request, res: Response) => {
-      const __dirname = resolve(dirname(''));
-      res.sendFile(__dirname + '/client/index.html');
-    });
+  private setupStaticFiles(): void {
+    this._app.use(express.static("client"));
   }
-  private loginRoute(): void {
-    this._app.get('/login', (req: Request, res: Response) => {
-      const __dirname = resolve(dirname(''));
-      res.sendFile(__dirname + '/client/login.html');
+
+  private setupRoutes(): void {
+    const __dirname = resolve(dirname(""));
+
+    // Serve main page
+    this._app.get("/", (req: Request, res: Response) => {
+      res.sendFile(join(__dirname, "client", "index.html"));
     });
-  }
-  private registerRoute(): void {
-    this._app.get('/register', (req: Request, res: Response) => {
-      const __dirname = resolve(dirname(''));
-      res.sendFile(__dirname + '/client/register.html');
+
+    // Login page
+    this._app.get("/login", (req: Request, res: Response) => {
+      res.sendFile(join(__dirname, "client", "login.html"));
+    });
+
+    // Register page
+    this._app.get("/register", (req: Request, res: Response) => {
+      res.sendFile(join(__dirname, "client", "register.html"));
     });
   }
 
   private startServer(): void {
-    if (this._env === 'production') {
+    if (this._env === "production") {
       http.createServer(this.app).listen(3000, () => {
-        console.log('Server is listening!');
+        console.log("Server is listening!");
       });
+    } else {
+      console.log("Development server mode detected!");
     }
+  }
+
+  private globalErrorHandler(
+    err: Error,
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): void {
+    console.error("Global Error:", err.message);
+    res.status(500).json({ error: "An unexpected error occurred." });
   }
 }
 
