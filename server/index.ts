@@ -28,7 +28,7 @@ class Backend {
     this._env = process.env.NODE_ENV || 'development';
     this._jwtSecret = process.env.JWT_SECRET || 'default_secret';
     this._database = new Database();
-    this._api = new API(this._app, this._jwtSecret, this._database.pool);
+    this._api = new API(this._app, this._database);
 
     this.setupMiddleware();
     this.setupStaticFiles();

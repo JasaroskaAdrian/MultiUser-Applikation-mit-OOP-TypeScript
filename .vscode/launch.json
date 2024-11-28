@@ -6,7 +6,7 @@
         "request": "launch",
         "name": "Vite: Server Debug",
         "cwd": "${workspaceFolder}",
-        "runtimeExecutable": "yarn",
+        "runtimeExecutable": "npm",
         "args": ["dev"],
         "sourceMaps": true,
         "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],

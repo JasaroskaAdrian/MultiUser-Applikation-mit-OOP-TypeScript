@@ -25,4 +25,11 @@ https://cssgradient.io
 ````bash
 https://uiverse.io/vinodjangid07/good-donkey-28
 ````
-
+*Logout Button*
+````bash
+https://uiverse.io/carlosepcc/heavy-emu-25
+````
+*Like Button*
+````bash
+https://uiverse.io/lvloper/modern-ladybug-94
+````
