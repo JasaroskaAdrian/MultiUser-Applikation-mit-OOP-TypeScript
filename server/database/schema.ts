@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   firstName VARCHAR(255) NOT NULL,
   lastName VARCHAR(255) NOT NULL,
-  roles VARCHAR(255) NOT NULL,
+  role VARCHAR(255) NOT NULL,
   PRIMARY KEY (id),
   UNIQUE (username)
 );
@@ -28,14 +28,10 @@ const STARTING_USER = async () => {
   const hashedPassword = await bcrypt.hash(plainPassword, 10); // Hash das Passwort mit bcrypt
 
   return `
-    INSERT INTO users (username, password, firstName, lastName, roles)
+    INSERT INTO users (username, password, firstName, lastName, role)
     VALUES ('adi', '${hashedPassword}', 'Adrian', 'Jasaroska', 'admin')
     ON DUPLICATE KEY UPDATE username = username;
   `;
 };
 
-const TEST = `
-SELECT * FROM users;
-`;
-
-export { USER_TABLE, TWEET_TABLE, STARTING_USER, TEST };
+export { USER_TABLE, TWEET_TABLE, STARTING_USER };

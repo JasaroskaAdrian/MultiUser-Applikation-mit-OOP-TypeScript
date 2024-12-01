@@ -1,15 +1,18 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { API } from './api';
-import http from 'http';
 import { resolve, dirname, join } from 'path';
+import http from 'http';
 import { Database } from './database';
+import cors from 'cors';
+
+
+
 
 class Backend {
   private _app: Express;
   private _api: API;
   private _database: Database;
   private _env: string;
-  private _jwtSecret: string;
 
   public get app(): Express {
     return this._app;
@@ -26,7 +29,6 @@ class Backend {
   constructor() {
     this._app = express();
     this._env = process.env.NODE_ENV || 'development';
-    this._jwtSecret = process.env.JWT_SECRET || 'default_secret';
     this._database = new Database();
     this._api = new API(this._app, this._database);
 
@@ -37,12 +39,13 @@ class Backend {
   }
 
   private setupMiddleware(): void {
-    this._app.use(express.json());
-    this._app.use(this.globalErrorHandler);
+    this._app.use(express.json()); // Make sure this is here to parse JSON request bodies and should in front of all middlewares that could use req, res!!! -> Info from Michel
+    this._app.use(this.globalErrorHandler);  // Global error handling middleware
+    this._app.use(cors());
   }
 
   private setupStaticFiles(): void {
-    this._app.use(express.static('client'));
+    this._app.use(express.static('client')); 
   }
 
   private setupRoutes(): void {
@@ -63,13 +66,13 @@ class Backend {
 
   private startServer(): void {
     http.createServer(this.app).listen(3000, () => {
-      console.log('Server läuft auf http://localhost:3000');
+      console.log('Server is running at http://localhost:3000');
     });
   }
 
   private globalErrorHandler(err: Error, req: Request, res: Response, next: NextFunction): void {
-    console.error('Globaler Fehler:', err.message);
-    res.status(500).json({ error: 'Ein unerwarteter Fehler ist aufgetreten.' });
+    console.error('Global error:', err.message);
+    res.status(500).json({ error: err.message || 'An unexpected error occurred.' });
   }
 }
 

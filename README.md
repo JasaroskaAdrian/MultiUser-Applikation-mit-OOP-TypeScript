@@ -1,6 +1,10 @@
 # MultiUser Applikation mit OOP-TypeScript
 ### Run the Application
 ````bash
+npm install
+````
+
+````bash
 docker compose up -d
 ````
 
@@ -9,7 +13,7 @@ npm run build
 ````
 
 ````bash
-$env:NODE_ENV="production"; node dist/index.cjs
+npm start
 ````
 
 ### Sources

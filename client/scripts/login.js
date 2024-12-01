@@ -1,55 +1,43 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const usernameInput = document.getElementById("username");
-  const passwordInput = document.getElementById("password");
-  const loginButton = document.getElementById("login");
-  const errorText = document.getElementById("userFeedback");
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); // Prevent the default form submission
 
-  loginButton.addEventListener("click", async () => {
-    const username = usernameInput.value;
-    const password = passwordInput.value;
+  const username = document.getElementById('Username').value; // Matches 'Username' from HTML
+  const password = document.getElementById('password').value; // Matches 'password' from HTML
 
-    if (!username || !password) {
-      errorText.innerText = "Please enter both username and password.";
-      return;
-    }
+  try {
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ username, password }),
+    });
+    
 
-    try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
+    const result = await response.json();
 
-      // Fehlerbehandlung für die HTTP-Antwort
-      if (!response.ok) {
-        if (response.status === 401) {
-          errorText.innerText = "Invalid username or password";
-        } else {
-          errorText.innerText = "An unexpected error occurred. Please try again.";
-        }
-        return;
-      }
+    if (response.ok) {
+      // Stores the token in localStorage
+      if (result.token) {
+        localStorage.setItem("authToken", result.token);
+        document.getElementById("userFeedback").textContent = "Login successful!";
+        document.getElementById("userFeedback").style.color = "green";
 
-      const data = await response.json();
-
-      if (data?.token) {
-        // Store the token in localStorage
-        localStorage.setItem("token", data.token);
-
-        if (data?.username) {
-          localStorage.setItem("user", JSON.stringify(data));
-        }
-
-        // Redirect to homepage
-        window.location.href = "/";
+        // Redirects to dashboard
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1000); // Waits for a second before redirecting for user feedback - thought it might be cool
       } else {
-        errorText.innerText = "Login failed: No token received.";
+        document.getElementById("userFeedback").textContent = "Login failed. No token received.";
+        document.getElementById("userFeedback").style.color = "red";
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      errorText.innerText = "An error occurred. Please try again.";
+    } else {
+      // Displays error message if login fails
+      document.getElementById("userFeedback").textContent = result.message || "Invalid username or password.";
+      document.getElementById("userFeedback").style.color = "red";
     }
-  });
+  } catch (err) {
+    // Handles unexpected errors
+    document.getElementById("userFeedback").textContent =
+      "An error occurred. Please check your network and try again.";
+    document.getElementById("userFeedback").style.color = "red";
+  }
 });

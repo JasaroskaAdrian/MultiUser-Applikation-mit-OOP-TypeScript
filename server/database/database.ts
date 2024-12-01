@@ -1,6 +1,6 @@
 import mariadb from 'mariadb';
 import { Pool } from 'mariadb';
-import { USER_TABLE, TWEET_TABLE, STARTING_USER, TEST } from './schema';
+import { USER_TABLE, TWEET_TABLE, STARTING_USER } from './schema';
 
 export class Database {
   private _pool: Pool;
@@ -28,7 +28,6 @@ export class Database {
 
     const startingUserQuery = await STARTING_USER();
     await this.executeSQL(startingUserQuery);
-    await this.executeSQL(TEST);
   };
 
   // Modified executeSQL to accept parameters for queries
@@ -36,7 +35,7 @@ export class Database {
     try {
       const conn = await this._pool.getConnection();
       const res = await conn.query(query, params); // Use params for parameterized queries
-      conn.end();
+      conn.release();
       return res;
     } catch (err) {
       console.log(err);
