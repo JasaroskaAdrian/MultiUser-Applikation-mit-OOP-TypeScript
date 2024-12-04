@@ -5,8 +5,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"yarn dev:server\" \"yarn dev:client\"",
-    "dev:server": "vite",
+    "dev": "vite",
+    "dev:server": "vite --host 0.0.0.0 --port 4200 ",
     "dev:client": "livereload client/ -p 35729 -e html,js,css",
     "build": "vite build",
     "start": "powershell -Command \"$env:NODE_ENV='production'; node dist/index.cjs\"",

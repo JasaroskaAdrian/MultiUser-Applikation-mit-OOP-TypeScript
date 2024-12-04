@@ -8,10 +8,12 @@ export default defineConfig({
   },
   server: {
     port: 4200,
+    host: '0.0.0.0',
     hmr: {
       protocol: 'ws',
       host: 'localhost',
       port: 24678,
+      clientPort: 4200
     },
   },
   build: {

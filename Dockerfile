@@ -7,11 +7,14 @@ WORKDIR /app
 # Copy package.json and package-lock.json to install dependencies
 COPY package*.json ./
 
-# Install dependencies (use --legacy-peer-deps to handle any dependency conflicts)
-RUN npm install --legacy-peer-deps
+# Ensure a clean state for dependencies
+RUN rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
 
 # Copy the entire application code to the container
 COPY . .
+
+# Build the application
+RUN npm run build
 
 # Expose the port used by the Vite development server
 EXPOSE 4200
