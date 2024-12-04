@@ -1,21 +1,12 @@
 # MultiUser Applikation mit OOP-TypeScript
 ### Run the Application
 ````bash
-npm install
-````
-
-````bash
 docker compose up -d
 ````
 
-````bash
-npm run build
-````
-
-````bash
-npm start
-````
-
+### Test Userdaten für das Login
+ Username: adi
+ Password: supersecret123
 ### Sources
 *Login Form*
 ````bash
@@ -31,9 +22,7 @@ https://uiverse.io/vinodjangid07/good-donkey-28
 ````
 *Logout Button*
 ````bash
-https://uiverse.io/carlosepcc/heavy-emu-25
+https://uiverse.io/abrahamcalsin/sour-donkey-65
 ````
-*Like Button*
-````bash
-https://uiverse.io/lvloper/modern-ladybug-94
-````
+
+
