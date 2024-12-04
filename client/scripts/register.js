@@ -14,10 +14,12 @@ document.getElementById('form').addEventListener('submit', async (e) => {
     body: JSON.stringify({ username, password, email, firstName, lastName })
   });
 
+  const data = await response.text()
+
   if (response.ok) {
     alert('Registration successful');
     window.location.href = '/login';
   } else {
-    alert('Registration failed');
+    alert(`Registration failed: ${data}`);
   }
 });

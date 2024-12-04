@@ -1,23 +1,20 @@
-# Use an official Node.js runtime as the base image
-FROM node:latest
+# Use the official Node.js 18 image as the base
+FROM node:18
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json to install dependencies
 COPY package*.json ./
 
-# Install the dependencies
-RUN npm install
+# Install dependencies (use --legacy-peer-deps to handle any dependency conflicts)
+RUN npm install --legacy-peer-deps
 
-# Copy the rest of your app's source code
+# Copy the entire application code to the container
 COPY . .
 
-# Build the application
-RUN npm run build
+# Expose the port used by the Vite development server
+EXPOSE 4200
 
-# Expose the port the app runs on
-EXPOSE 3000
-
-# Command to run the app
-CMD ["node", "dist/index.cjs"]
+# Command to start the application
+CMD ["npm", "run", "dev"]

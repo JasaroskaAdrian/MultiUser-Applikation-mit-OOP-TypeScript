@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INT NOT NULL AUTO_INCREMENT,
   username VARCHAR(255) NOT NULL,
   password VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
   firstName VARCHAR(255) NOT NULL,
   lastName VARCHAR(255) NOT NULL,
   role VARCHAR(255) NOT NULL,
@@ -29,8 +30,8 @@ const STARTING_USER = async () => {
   const hashedPassword = await bcrypt.hash(plainPassword, 10); // Hash das Passwort mit bcrypt
 
   return `
-    INSERT INTO users (username, password, firstName, lastName, role)
-    VALUES ('adi', '${hashedPassword}', 'Adrian', 'Jasaroska', 'admin')
+    INSERT INTO users (username, password, email, firstName, lastName, role)
+    VALUES ('adi', '${hashedPassword}', 'adi@example.com', 'Adrian', 'Jasaroska', 'admin')
     ON DUPLICATE KEY UPDATE username = username;
   `;
 };
