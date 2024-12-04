@@ -1,43 +1,32 @@
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault(); // Prevent the default form submission
+const API_BASE_URL = 'http://localhost:4200' // Serveradresse
 
-  const username = document.getElementById('Username').value; // Matches 'Username' from HTML
-  const password = document.getElementById('password').value; // Matches 'password' from HTML
+      document
+        .getElementById('loginForm')
+        .addEventListener('submit', async (e) => {
+          e.preventDefault()
 
-  try {
-    const response = await fetch("/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" }, 
-      body: JSON.stringify({ username, password }),
-    });
-    
+          const username = document.getElementById('username').value
+          const password = document.getElementById('password').value
 
-    const result = await response.json();
+          try {
+            const response = await fetch('http://localhost:4200/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ username, password }),
+            })
 
-    if (response.ok) {
-      // Stores the token in localStorage
-      if (result.token) {
-        localStorage.setItem("authToken", result.token);
-        document.getElementById("userFeedback").textContent = "Login successful!";
-        document.getElementById("userFeedback").style.color = "green";
-
-        // Redirects to dashboard
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1000); // Waits for a second before redirecting for user feedback - thought it might be cool
-      } else {
-        document.getElementById("userFeedback").textContent = "Login failed. No token received.";
-        document.getElementById("userFeedback").style.color = "red";
-      }
-    } else {
-      // Displays error message if login fails
-      document.getElementById("userFeedback").textContent = result.message || "Invalid username or password.";
-      document.getElementById("userFeedback").style.color = "red";
-    }
-  } catch (err) {
-    // Handles unexpected errors
-    document.getElementById("userFeedback").textContent =
-      "An error occurred. Please check your network and try again.";
-    document.getElementById("userFeedback").style.color = "red";
-  }
-});
+            if (response.ok) {
+              const data = await response.json()
+              localStorage.setItem('token', data.token) // Speichert das Token
+              alert('Login successful! Redirecting...')
+              window.location.href = '/dashboard' // Weiterleitung
+            } else {
+              alert('Login failed: Invalid username or password')
+            }
+          } catch (err) {
+            console.error('Login error:', err)
+            alert('An error occurred. Please check the console for details.')
+          }
+        })

@@ -1,31 +1,23 @@
-document.querySelector(".form").addEventListener("submit", async (e) => {
-    e.preventDefault(); // Prevent the default form submission
-  
-    const formData = {
-      firstName: document.querySelector('input[placeholder="First Name"]').value,
-      lastName: document.querySelector('input[placeholder="Last Name"]').value,
-      email: document.querySelector('input[placeholder="Email"]').value,
-      username: document.querySelector('input[placeholder="Username"]').value,
-      password: document.querySelector('input[placeholder="Password"]').value,
-    };
-  
-    try {
-      const response = await fetch("/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-  
-      const result = await response.json();
-      if (response.ok) {
-        document.querySelector(".userFeedback").textContent =
-          "Registration successful!";
-      } else {
-        document.querySelector(".userFeedback").textContent = result.message;
-      }
-    } catch (err) {
-      document.querySelector(".userFeedback").textContent =
-        "An error occurred. Please try again.";
-    }
+const API_BASE_URL = 'http://localhost:4200'; // Serveradresse
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const email = document.getElementById('email').value;
+  const firstName = document.getElementById('firstName').value;
+  const lastName = document.getElementById('lastName').value;
+
+  const response = await fetch('/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, email, firstName, lastName })
   });
-  
+
+  if (response.ok) {
+    alert('Registration successful');
+    window.location.href = '/login';
+  } else {
+    alert('Registration failed');
+  }
+});

@@ -1,120 +1,264 @@
-import { Request, Response, Express, request, NextFunction } from 'express';
-import { Database } from '../database';
+import { Request, Response, Express } from 'express';
+import { ResultSetHeader } from 'mysql2/promise';
+import { RowDataPacket } from 'mysql2';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import authenticateToken from './auth/jwtAuth'; // Auth Middleware importieren
+import { Database } from '../database/database';
 
 export class API {
-  // Properties
   app: Express;
   db: Database;
 
-  // Constructor
   constructor(app: Express, db: Database) {
     this.app = app;
     this.db = db;
-    this.routes();
+
+    // Unprotected Routes
+    this.app.post('/register', this.registerUser.bind(this));
+    this.app.post('/login', this.loginUser.bind(this));
+
+    // Protected Routes
+    this.app.get('/dashboard', authenticateToken, this.getPosts.bind(this));
+    this.app.post('/dashboard', authenticateToken, this.createPost.bind(this));
+    this.app.put('/dashboard/:id', authenticateToken, this.updatePost.bind(this));
+    this.app.delete('/dashboard/:id', authenticateToken, this.deletePost.bind(this));
+
+    // Comment Routes
+    this.app.post('/dashboard/:postId/comments', authenticateToken, this.createComment.bind(this));
+    this.app.get('/dashboard/:postId/comments', authenticateToken, this.getComments.bind(this));
+    this.app.put('/dashboard/:postId/comments/:id', authenticateToken, this.updateComment.bind(this));
+    this.app.delete('/dashboard/:postId/comments/:id', authenticateToken, this.deleteComment.bind(this));
   }
 
-  // Methods
-  private testAPI(req: Request, res: Response) {
-    res.send('My API is successfully working');
-  }
+  // --- Utility Functions ---
+  private validateId(id: string | number | undefined): boolean {
+    const numId = Number(id); // Konvertiere in eine Zahl
+    return !isNaN(numId) && numId > 0;
+  }  
 
-  private routes() {
-    this.app.get('/', this.verifyToken)
-    this.app.post('/register', this.register);
-    this.app.post('/login', this.login);
-    this.app.get('/testing', this.testAPI);
-  }
-
-  // Generate JWT Token
-  private generatedJwtToken(username: string): Promise<any> | Response {
-    const secret = process.env.JWT_SECRET || 'supersecret_jwt123';
-    return jwt.sign({ username }, secret, { expiresIn: '7d' });
-  }
-
-  private async verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const token = req.headers.authorization?.split(' ')[1]; // Extracts token from 'Bearer <token>'
-  
-    if (!token) {
-      res.status(401).json({ message: 'Access Denied. No token provided.' });
-      return;
-    }
-  
+  // --- Post Functions ---
+  private async getPosts(req: Request, res: Response) {
     try {
-      const secret = process.env.JWT_SECRET || 'supersecret_jwt123';
-      jwt.verify(token, secret);
-      next(); // Passes control to the next middleware 
-    } catch (err) {
-      res.status(403).json({ message: 'Invalid or expired token.' });
-      return;
-    }
-  }
-  
-  // Register method
-  private register = async (req: Request, res: Response): Promise<any> => {
-    const { username, password, email, firstName, lastName } = req.body;
-
-    if (!username || !password || !email || !firstName || !lastName) {
-      return res.status(400).json({ message: 'Please fill in all necessary information' });
-    }
-
-    const verifyUserinputValid = `SELECT * FROM \`users\` WHERE \`username\` = ?`;
-
-    try {
-      const checkIfUserExists = await this.db.executeSQL(verifyUserinputValid, username);
-
-      if (checkIfUserExists.length > 0) {
-        return res.status(409).json({ message: 'Username is taken' });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      const insertUserQuery = `
-        INSERT INTO \`users\` (\`username\`, \`password\`, \`email\`, \`firstName\`, \`lastName\`, \`role\`) 
-        VALUES (?, ?, ?, ?, ?, 'user');
-      `;
-
-      await this.db.executeSQL(insertUserQuery, [username, hashedPassword, email, firstName, lastName]);
-      res.status(200).json({ message: 'User successfully registered' });
+      const query = `SELECT tweets.id, tweets.content, tweets.created_at, users.username 
+                     FROM tweets 
+                     INNER JOIN users ON tweets.user_id = users.id 
+                     ORDER BY tweets.created_at DESC`;
+      const posts = await this.db.executeSQL<RowDataPacket[]>(query);
+      res.json(posts);
     } catch (error) {
-      console.error('Error during registration:', error);
-      res.status(500).json({ message: 'An error occurred during registration' });
+      console.error('Error fetching posts:', error);
+      res.status(500).json({ message: 'Error fetching posts' });
     }
-  };
+  }
 
-  // Login method
-  private login = async (req: Request, res: Response): Promise<any> => {
+  private async createPost(req: Request, res: Response) {
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: 'Invalid content' });
+    }
+
+    try {
+      const query = `INSERT INTO tweets (user_id, content, created_at) VALUES (?, ?, NOW())`;
+      const result = await this.db.executeSQL<ResultSetHeader>(query, [req.user?.id, content]);
+      res.status(201).json({ message: 'Post created', postId: (result as ResultSetHeader).insertId });
+    } catch (error) {
+      console.error('Error creating post:', error);
+      res.status(500).json({ message: 'Error creating post' });
+    }
+  }
+
+  private async updatePost(req: Request, res: Response) {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!this.validateId(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: 'Invalid content' });
+    }
+
+    try {
+      const query = `UPDATE tweets SET content = ? WHERE id = ? AND user_id = ?`;
+      const result = await this.db.executeSQL<ResultSetHeader>(query, [content, id, req.user?.id]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Post not found or unauthorized' });
+      }
+      res.json({ message: 'Post updated' });
+    } catch (error) {
+      console.error('Error updating post:', error);
+      res.status(500).json({ message: 'Error updating post' });
+    }
+  }
+
+  private async deletePost(req: Request, res: Response) {
+    const { id } = req.params;
+
+    if (!this.validateId(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
+
+    try {
+      const query = `DELETE FROM tweets WHERE id = ? AND user_id = ?`;
+      const result = await this.db.executeSQL<ResultSetHeader>(query, [id, req.user?.id]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Post not found or unauthorized' });
+      }
+      res.json({ message: 'Post deleted' });
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      res.status(500).json({ message: 'Error deleting post' });
+    }
+  }
+
+  // --- Comment Functions ---
+  private async createComment(req: Request, res: Response) {
+    const postId = Number(req.params.postId); // Konvertiere postId zu einer Zahl
+    const { content } = req.body;
+
+    if (!this.validateId(postId)) { // Überprüfe, ob postId gültig ist
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: 'Invalid content' });
+    }
+
+    try {
+      const query = `
+        INSERT INTO comments (tweet_id, user_id, content, created_at)
+        VALUES (?, ?, ?, NOW())
+      `;
+      const result = await this.db.executeSQL<ResultSetHeader>(query, [postId, req.user?.id, content]);
+      res.status(201).json({ message: 'Comment created', commentId: result.insertId });
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      res.status(500).json({ message: 'Error creating comment' });
+    }
+  }
+  
+
+  private async getComments(req: Request, res: Response) {
+    const { postId } = req.params;
+
+    if (!this.validateId(postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+
+    try {
+      const query = `
+        SELECT c.id, c.content, c.created_at, u.username
+        FROM comments c
+        INNER JOIN users u ON c.user_id = u.id
+        WHERE c.tweet_id = ?
+        ORDER BY c.created_at ASC
+      `;
+      const rows = await this.db.executeSQL<RowDataPacket[]>(query, [postId]);
+      res.json(rows);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      res.status(500).json({ message: 'Error fetching comments' });
+    }
+  }
+
+  private async updateComment(req: Request, res: Response) {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!this.validateId(id)) {
+      return res.status(400).json({ message: 'Invalid comment ID' });
+    }
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: 'Invalid content' });
+    }
+
+    try {
+      const query = `UPDATE comments SET content = ? WHERE id = ? AND user_id = ?`;
+      const result = await this.db.executeSQL<ResultSetHeader>(query, [content, id, req.user?.id]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Comment not found or unauthorized' });
+      }
+      res.json({ message: 'Comment updated' });
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      res.status(500).json({ message: 'Error updating comment' });
+    }
+  }
+
+  private async deleteComment(req: Request, res: Response) {
+    const { id } = req.params;
+
+    if (!this.validateId(id)) {
+      return res.status(400).json({ message: 'Invalid comment ID' });
+    }
+
+    try {
+      const query = `DELETE FROM comments WHERE id = ? AND user_id = ?`;
+      const result = await this.db.executeSQL<ResultSetHeader>(query, [id, req.user?.id]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Comment not found or unauthorized' });
+      }
+      res.json({ message: 'Comment deleted' });
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      res.status(500).json({ message: 'Error deleting comment' });
+    }
+  }
+
+  // --- Authentication ---
+  private async registerUser(req: Request, res: Response) {
+    const { username, password } = req.body;
+    if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
+      return res.status(400).send('Invalid username or password');
+    }
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const query = `INSERT INTO users (username, password) VALUES (?, ?)`;
+      await this.db.executeSQL(query, [username, hashedPassword]);
+      res.status(201).send('User registered');
+    } catch (error) {
+      console.error('Error registering user:', error);
+      res.status(500).send('Error registering user');
+    }
+  }
+
+  private async loginUser(req: Request, res: Response) {
     const { username, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required' });
+    if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
+      return res.status(400).send('Invalid username or password');
     }
 
     try {
-      const userQuery = `SELECT * FROM \`users\` WHERE \`username\` = ?`;
-      const users = await this.db.executeSQL(userQuery, [username]);
+      const query = `SELECT * FROM users WHERE username = ?`;
+      const users: any = await this.db.executeSQL(query, [username]);
 
-      if (!users || users.length === 0) {
-        return res.status(401).json({ message: 'Invalid username or password' });
+      if (users.length === 0) {
+        return res.status(404).send('User not found');
       }
 
       const user = users[0];
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      const isValidPassword = await bcrypt.compare(password, user.password);
 
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid username or password' });
+      if (!isValidPassword) {
+        return res.status(401).send('Invalid credentials');
       }
 
-      // Generates JWT token
-      const token = await this.generatedJwtToken(user.username);
-      res.status(200).json({ message: 'Logged in successfully', token }); // Sends token in the response
-      console.log('User found:', user);
-      console.log('Generated token:', token);
+      const token = jwt.sign(
+        { id: user.id, username: user.username },
+        process.env.JWT_SECRET || 'supersecretkey',
+        { expiresIn: '1h' }
+      );
 
+      res.json({ token });
     } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: 'An error occurred during login' });
+      console.error('Error logging in:', error);
+      res.status(500).send('Error logging in');
     }
-  };
+  }
 }

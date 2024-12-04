@@ -1,0 +1,282 @@
+const API_BASE_URL = 'http://localhost:4200';
+
+    function isTokenExpired(token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1])); // Payload dekodieren
+        console.log('Token Payload:', payload); // Payload anzeigen
+        const now = Date.now() / 1000; // Aktuelle Zeit in Sekunden
+        console.log('Current Time:', now);
+        console.log('Token Expiration Time:', payload.exp);
+        return payload.exp < now; // Rückgabe: Ist das Token abgelaufen?
+      } catch (error) {
+        console.error('Invalid Token:', error.message);
+        return true; // Falls Token ungültig ist
+      }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      if (!token || isTokenExpired(token)) {
+        alert('Session expired. Please log in again.');
+        window.location.href = '/login';
+      } else {
+        loadPosts();
+      }
+    });
+
+    // Load Posts
+    async function loadPosts() {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          alert(`Error: ${error.message}`);
+          return;
+        }
+
+        const posts = await response.json();
+        renderPosts(posts);
+      } catch (err) {
+        console.error('Error fetching posts:', err);
+        alert('An error occurred while loading posts.');
+      }
+    }
+
+    // Render Posts
+    function renderPosts(posts) {
+      console.log('Posts-Daten:', posts);
+      const postsContainer = document.getElementById('postsContainer');
+      postsContainer.innerHTML = posts.map(post => `
+        <div class="bg-white p-4 rounded shadow">
+          <p class="mb-2"><strong>${post.username}</strong>: ${post.content}</p>
+          <p class="text-gray-500 text-sm">${new Date(post.created_at).toLocaleString()}</p>
+          <button onclick="deletePost(${post.id})" class="bg-red-500 text-white px-2 py-1 rounded mt-2">Delete</button>
+          <button onclick="editPost(${post.id}, '${post.content}')" class="bg-green-500 text-white px-2 py-1 rounded ml-2 mt-2">Edit</button>
+
+          <!-- Comment Section -->
+          <div class="mt-4">
+            <h3 class="text-lg font-bold mb-2">Comments</h3>
+            <div id="commentsContainer-${post.id}" class="space-y-2">
+              <p class="text-gray-500">Loading comments...</p>
+            </div>
+            <form onsubmit="createComment(event, ${post.id})" class="mt-2">
+              <textarea id="commentContent-${post.id}" class="w-full p-2 border rounded" placeholder="Write a comment..."></textarea>
+              <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Add Comment</button>
+            </form>
+          </div>
+        </div>
+      `).join('');
+      console.log('Gerenderte Posts:', postsContainer.innerHTML);
+
+      posts.forEach(post => loadComments(post.id));
+    }
+
+    // Create Post
+    document.getElementById('createPostForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const content = document.getElementById('postContent').value;
+
+      if (!content) {
+        alert('Post content cannot be empty!');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE_URL}/posts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content }),
+        });
+
+        if (response.ok) {
+          document.getElementById('postContent').value = '';
+          loadPosts();
+        } else {
+          const error = await response.json();
+          alert(`Failed to create post: ${error.message}`);
+        }
+      } catch (err) {
+        console.error('Error creating post:', err);
+      }
+    });
+
+    // Edit Post
+    async function editPost(postId, oldContent) {
+      const newContent = prompt('Edit your post:', oldContent);
+      if (!newContent) return;
+
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard/${postId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content: newContent }),
+        });
+
+        if (response.ok) {
+          loadPosts();
+        } else {
+          const error = await response.json();
+          alert(`Failed to update post: ${error.message}`);
+        }
+      } catch (err) {
+        console.error('Error updating post:', err);
+      }
+    }
+
+    // Delete Post
+    async function deletePost(postId) {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard/${postId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          loadPosts();
+        } else {
+          const error = await response.json();
+          alert(`Failed to delete post: ${error.message}`);
+        }
+      } catch (err) {
+        console.error('Error deleting post:', err);
+      }
+    }
+
+    // Load Comments
+    async function loadComments(postId) {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard/${postId}/comments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const comments = await response.json();
+          renderComments(postId, comments);
+        } else {
+          console.error(`Failed to load comments for postId ${postId}:`, await response.text());
+        }
+      } catch (err) {
+        console.error('Error loading comments:', err);
+      }
+    }
+
+    // Render Comments
+    function renderComments(postId, comments) {
+      const commentsContainer = document.getElementById(`commentsContainer-${postId}`);
+      if (!comments || comments.length === 0) {
+        commentsContainer.innerHTML = `<p class="text-gray-500">No comments yet.</p>`;
+        return;
+      }
+
+      commentsContainer.innerHTML = comments.map(comment => `
+        <div class="bg-gray-100 p-2 rounded shadow">
+          <p class="mb-2"><strong>${comment.username}</strong>: ${comment.content}</p>
+          <p class="text-gray-500 text-sm">${new Date(comment.created_at).toLocaleString()}</p>
+          <button onclick="deleteComment(${postId}, ${comment.id})" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+          <button onclick="editComment(${postId}, ${comment.id}, '${comment.content}')" class="bg-green-500 text-white px-2 py-1 rounded ml-2">Edit</button>
+        </div>
+      `).join('');
+    }
+
+    // Create Comment
+      window.createComment = async function (event, postId) {
+        event.preventDefault();
+        console.log('createComment aufgerufen mit postId:', postId);
+        const content = document.getElementById(`commentContent-${postId}`).value;
+
+        if (!content) {
+            alert('Comment content cannot be empty!');
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        console.log('Kommentar-Inhalt:', content);
+        console.log('Token:', token);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/dashboard/${postId}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ content }),
+            });
+
+            console.log('Response:', response);
+
+            if (response.ok) {
+                document.getElementById(`commentContent-${postId}`).value = '';
+                loadComments(postId);
+            } else {
+                const error = await response.json();
+                alert(`Failed to create comment: ${error.message}`);
+            }
+        } catch (err) {
+            console.error('Error creating comment:', err);
+        }
+      };
+
+
+
+    // Edit Comment
+    async function editComment(postId, commentId, oldContent) {
+      const newContent = prompt('Edit your comment:', oldContent);
+      if (!newContent) return;
+
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard/${postId}/comments/${commentId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content: newContent }),
+        });
+
+        if (response.ok) {
+          loadComments(postId);
+        } else {
+          const error = await response.json();
+          alert(`Failed to update comment: ${error.message}`);
+        }
+      } catch (err) {
+        console.error('Error updating comment:', err);
+      }
+    }
+
+    // Delete Comment
+    async function deleteComment(postId, commentId) {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard/${postId}/comments/${commentId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          loadComments(postId);
+        } else {
+          const error = await response.json();
+          alert(`Failed to delete comment: ${error.message}`);
+        }
+      } catch (err) {
+        console.error('Error deleting comment:', err);
+      }
+    }

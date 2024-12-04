@@ -1,45 +1,47 @@
-import mariadb from 'mariadb';
-import { Pool } from 'mariadb';
-import { USER_TABLE, TWEET_TABLE, STARTING_USER } from './schema';
+import mysql, { RowDataPacket, OkPacket, ResultSetHeader } from 'mysql2/promise';
+import { USER_TABLE, TWEET_TABLE, STARTING_USER } from './schema'
 
 export class Database {
-  private _pool: Pool;
+  // Properties
+  private _pool: mysql.Pool
 
+  // Constructor
   constructor() {
-    this._pool = mariadb.createPool({
+    this._pool = mysql.createPool({
       database: process.env.DB_NAME || 'minitwitter',
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'minitwitter',
       password: process.env.DB_PASSWORD || 'supersecret123',
       connectionLimit: 5,
-    });
-    this.initializeDBSchema();
+    })
+    this.initializeDBSchema()
   }
 
-  // Getter for the pool
-  public get pool(): Pool {
-    return this._pool;
-  }
-
+  // Methods
   private initializeDBSchema = async () => {
-    console.log('Initializing DB schema...');
-    await this.executeSQL(USER_TABLE);
-    await this.executeSQL(TWEET_TABLE);
+    console.log('Initializing DB schema...')
+    await this.executeSQL(USER_TABLE)
+    await this.executeSQL(TWEET_TABLE)
 
-    const startingUserQuery = await STARTING_USER();
-    await this.executeSQL(startingUserQuery);
-  };
+    const startingUser = await STARTING_USER()
+    await this.executeSQL(startingUser)
+  }
 
-  // Modified executeSQL to accept parameters for queries
-  public executeSQL = async (query: string, params: any[] = []) => {
+  public executeSQL = async <T extends RowDataPacket[] | OkPacket | ResultSetHeader>(
+    query: string,
+    params: any[] = []
+  ): Promise<T> => {
     try {
       const conn = await this._pool.getConnection();
-      const res = await conn.query(query, params); // Use params for parameterized queries
-      conn.release();
-      return res;
+      try {
+        const [results] = await conn.query<T>(query, params);
+        return results;
+      } finally {
+        conn.release();
+      }
     } catch (err) {
-      console.log(err);
-      throw err; // Rethrow the error for proper handling in calling methods
+      console.error('Error executing query:', err);
+      throw err; // Wirf den Fehler weiter, um ihn im API-Handler zu behandeln
     }
   };
 }
